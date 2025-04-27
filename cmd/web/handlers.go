@@ -2,19 +2,40 @@ package main
 
 import (
 	"fmt"
+	"html/template"
+	"log"
 	"net/http"
 	"strconv"
 )
 
-// Define a home handler function which writes a byte slice containing
-// "Hello from Snippetbox" as the response body.
 func home(w http.ResponseWriter, r *http.Request) {
-	// Use the Header().Add() method to add a 'Server: Go' header to the
-	// response header map. The first parameter is the header name, and
-	// the second parameter is the header value.
 	w.Header().Add("Server", "Go")
 
-	w.Write([]byte("Hello from Snippetbox"))
+	// Initialize a slice containing the paths to the two files. It's important
+	// to note that the file containing our base template must be the *first*
+	// file in the slice.
+	files := []string{
+		"./ui/html/base.tmpl",
+		"./ui/html/partials/nav.tmpl",
+		"./ui/html/pages/home.tmpl",
+	}
+
+	ts, err := template.ParseFiles(files...)
+	if err != nil {
+		log.Print(err.Error())
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	// Then we use the Execute() method on the template set to write the
+	// template content as the response body. The last parameter to Execute()
+	// represents any dynamic data that we want to pass in, which for now we'll
+	// leave as nil.
+	err = ts.ExecuteTemplate(w, "base", nil)
+	if err != nil {
+		log.Print(err.Error())
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
 }
 
 // Add a snippetView handler function
